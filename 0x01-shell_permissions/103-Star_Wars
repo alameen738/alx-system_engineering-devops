@@ -1,2 +1,2 @@
 #!/bin/bash
-talnet towel.blinkenlight.nl
+telnet towel.blinkenlights.nl
