@@ -1,13 +1,41 @@
-#!/usr/bin/env bash
-# A script to configure Nginx server so that /redirect_me is redirecting to another page.
+#!/bin/bash
 
-sudo apt-get update
-sudo apt-get -y install nginx
-sudo ufw allow 'Nginx HTTP'
-sudo service nginx start
-echo "Hello World!" > /var/www/html/index.nginx-debian.html
-sed -i '/listen 80 default_server;/a rewrite ^/redirect_me https://www.youtube.com/watch?v=QH2-TGUlwu4 permanent;' /etc/nginx/sites-available/default
-echo "Ceci n'est pas une page" > /usr/share/nginx/html/custom_404.html
-sed -i '/server_name _;/a error_page 404 /custom_404.html;\nlocation = /custom_404.html {\nroot /usr/share/nginx/html;\ninternal;\n}' /etc/nginx/sites-available/default
-sudo service nginx restart
-sudo service nginx reload
+# Check if running as root
+if [[ $EUID -ne 0 ]]; then
+   echo "This script must be run as root" 
+   exit 1
+fi
+
+# Install Nginx
+apt-get update
+apt-get install -y nginx
+
+# Create custom 404 page
+echo "Ceci n'est pas une page" > /usr/share/nginx/html/404.html
+
+# Configure Nginx to use the custom 404 page
+cat <<EOF > /etc/nginx/sites-available/custom_404
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    server_name _;
+
+    error_page 404 /404.html;
+    location = /404.html {
+        root /usr/share/nginx/html;
+        internal;
+    }
+
+    # Other server configuration if needed
+}
+EOF
+
+# Create symlink to enable the configuration
+ln -s /etc/nginx/sites-available/custom_404 /etc/nginx/sites-enabled/
+
+# Restart Nginx
+service nginx restart
+
+# Display success message
+echo "Nginx custom 404 page configured successfully."
+
