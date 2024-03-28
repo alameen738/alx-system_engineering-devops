@@ -1,10 +1,12 @@
+# Puppet manifest to install Flask version 2.1.0 on Ubuntu 20.04 LTS
 
-# creates a file in /tmp
-
-file {'/tmp/school':
-  path    => '/tmp/school',
-  mode    => '0744',
-  owner   => 'www-data',
-  group   => 'www-data',
-  content => 'I love Puppet'
+package { 'python3-pip':
+  ensure => installed,
 }
+
+exec { 'install_flask':
+  command => '/usr/bin/pip3 install flask==2.1.0',
+  unless  => '/usr/bin/pip3 show flask | grep -q "Version: 2.1.0"',
+  require => Package['python3-pip'],
+}
+
