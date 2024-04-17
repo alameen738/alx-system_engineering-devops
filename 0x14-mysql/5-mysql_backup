@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# Check if the password argument is provided
+if [ -z "$1" ]; then
+    echo "Usage: $0 <password>"
+    exit 1
+fi
+
+# Create a directory to store the backup files
+backup_dir="$(date +%d-%m-%Y)"
+mkdir "$backup_dir"
+
+# Generate MySQL dump and compress it
+mysqldump -u root -p"$1" --all-databases > "$backup_dir/backup.sql"
+tar -czvf "$backup_dir.tar.gz" "$backup_dir"
+
+# Cleanup the temporary directory
+rm -rf "$backup_dir"
+
+echo "MySQL backup completed successfully."
