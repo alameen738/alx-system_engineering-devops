@@ -1,33 +1,53 @@
 #!/usr/bin/python3
-
 """
-prints the titles of the first 10 hot posts listed for a given subreddit
+This module provides a function to query the Reddit API and print the titles of the first 10 hot posts for a given subreddit.
 """
 
-from requests import get
-
+import requests
 
 def top_ten(subreddit):
     """
-    function that queries the Reddit API and prints the titles of the first
-    10 hot posts listed for a given subreddit
+    Queries the Reddit API and prints the titles of the first 10 hot posts for a given subreddit.
+
+    Args:
+        subreddit (str): The name of the subreddit.
+
+    Returns:
+        None
     """
+    # URL of the Reddit API endpoint for fetching hot posts
+    url = f"https://www.reddit.com/r/{subreddit}/hot.json?limit=10"
 
-    if subreddit is None or not isinstance(subreddit, str):
-        print("None")
+    # Set a custom User-Agent to avoid "Too Many Requests" error
+    headers = {"User-Agent": "Custom User Agent"}
 
-    user_agent = {'User-agent': 'Google Chrome Version 81.0.4044.129'}
-    params = {'limit': 10}
-    url = 'https://www.reddit.com/r/{}/hot/.json'.format(subreddit)
-
-    response = get(url, headers=user_agent, params=params)
-    results = response.json()
-
+    # Send GET request to the Reddit API
     try:
-        my_data = results.get('data').get('children')
+        response = requests.get(url, headers=headers, allow_redirects=False)
+        response.raise_for_status()  # Raise an exception for 4xx or 5xx status codes
+    except requests.exceptions.RequestException as e:
+        print(f"Error: {e}")
+        return
 
-        for i in my_data:
-            print(i.get('data').get('title'))
+    # Check if the response is successful (status code 200) and JSON content
+    if response.status_code == 200 and "application/json" in response.headers.get("Content-Type", ""):
+        # Parse JSON response
+        data = response.json()
+        # Extract titles of the first 10 hot posts
+        posts = data.get("data", {}).get("children", [])
+        if posts:
+            print("Top 10 hot posts in subreddit '{}' :\n".format(subreddit))
+            for post in posts:
+                print(post["data"]["title"])
+        else:
+            print("Subreddit '{}' not found or has no hot posts.".format(subreddit))
+    else:
+        print("Subreddit '{}' not found or an error occurred.".format(subreddit))
 
-    except Exception:
-        print("None")
+# Example usage
+if __name__ == "__main__":
+    import sys
+    if len(sys.argv) < 2:
+        print("Please pass an argument for the subreddit to search.")
+    else:
+        top_ten(sys.argv[1])
